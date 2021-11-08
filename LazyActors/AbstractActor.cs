@@ -22,7 +22,6 @@ namespace LazyActor
                 }
             });
         }
-        private bool IsBisy => _taskBuffer.TaskCount > 0;
         private async Task Handle(ActorMessage<T> message)
         {
             try
@@ -52,18 +51,41 @@ namespace LazyActor
 
             }
         }
+        /// <summary>
+        /// Указывает есть ли задачи, которые нужно выполнять.
+        /// </summary>
+        protected bool IsBisy => _taskBuffer.TaskCount > 0;
+        /// <summary>
+        /// Добавляет в буфер задачу, значение которой нужно вернуть после выполнения с результатом TResponse.
+        /// </summary>
         protected Task<TResponse> PostWithReply<TResponse>(Func<ReplyChannel<TResponse>, T> msgFabric) => _taskBuffer.PostAndReply<TResponse>(rc => new ActorMessage<T>(msgFabric(rc)));
+        /// <summary>
+        /// Обрабатывает сообщение.
+        /// </summary>
         protected abstract Task HandleMessage(T message);
+        /// <summary>
+        /// Обработка ошибки при неудачном HandleMessage.
+        /// </summary>
         protected abstract Task<HandleResult> HandleError(Exception ex, ActorMessage<T> message);
-        
+        /// <summary>
+        /// Добавляет сообщение в очередь
+        /// </summary>
+        /// <param name="message">Сообщение</param>
         protected void Post(T message)
         {
             _taskBuffer.Post(new ActorMessage<T>(message));
         }
+        /// <summary>
+        /// Удаляет все сообщения из очереди
+        /// </summary>
         protected void Clear()
         {
             _taskBuffer.Clear();
         }
+        /// <summary>
+        /// Метод ожидания отсутствия задач.
+        /// </summary>
+        /// <returns></returns>
         protected async Task WaitWindowEmpty()
         {
             while (IsBisy)
